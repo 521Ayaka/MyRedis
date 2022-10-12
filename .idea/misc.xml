@@ -7,12 +7,14 @@
         <option value="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-01-Jedis/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis-Jedis/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/pom.xml" />
-        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping-redis/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping-cache/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-solve/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-util/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Cache/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-CacheSolve/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-03-CacheUtils/pom.xml" />
       </list>
     </option>
   </component>

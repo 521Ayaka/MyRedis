@@ -4,19 +4,16 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/MyRedis.iml" filepath="$PROJECT_DIR$/MyRedis.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-00-Start/MyRedis-00-Start.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-00-Start/MyRedis-00-Start.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MyRedis-00-对接源/MyRedis-00-对接源.iml" filepath="$PROJECT_DIR$/MyRedis-00-对接源/MyRedis-00-对接源.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Cache/MyRedis-01-Cache.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Cache/MyRedis-01-Cache.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-01-Jedis/MyRedis-01-Jedis.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-01-Jedis/MyRedis-01-Jedis.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/MyRedis-01-Object.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/MyRedis-01-Object.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-01-基础篇.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-01-基础篇.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-01-常见命令/MyRedis-01-常见命令.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-01-常见命令/MyRedis-01-常见命令.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/MyRedis-02-Cache.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/MyRedis-02-Cache.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-CacheSolve/MyRedis-02-CacheSolve.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-CacheSolve/MyRedis-02-CacheSolve.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-Redis的Java客户端.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-Redis的Java客户端.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/MyRedis-02-SpringDataRedis.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/MyRedis-02-SpringDataRedis.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-实战篇.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-实战篇.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping/hm-dianping.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping/hm-dianping.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache/hm-dianping-cache.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache/hm-dianping-cache.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-solve/hm-dianping-cache-solve.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-solve/hm-dianping-cache-solve.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-util/hm-dianping-cache-util.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-util/hm-dianping-cache-util.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping-redis/hm-dianping-redis.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping-redis/hm-dianping-redis.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-03-CacheUtils/MyRedis-03-CacheUtils.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-03-CacheUtils/MyRedis-03-CacheUtils.iml" />
       <module fileurl="file://$PROJECT_DIR$/测试用例/测试用例/测试用例.iml" filepath="$PROJECT_DIR$/测试用例/测试用例/测试用例.iml" />
     </modules>
   </component>

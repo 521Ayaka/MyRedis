@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MyRedis.iml" filepath="$PROJECT_DIR$/MyRedis.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-00-Start/MyRedis-00-Start.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-00-Start/MyRedis-00-Start.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-01-Jedis/MyRedis-01-Jedis.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-01-Jedis/MyRedis-01-Jedis.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/MyRedis-01-Object.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/MyRedis-01-Object.iml" />

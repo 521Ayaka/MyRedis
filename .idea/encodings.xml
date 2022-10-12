@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-01-Jedis/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping-redis/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping-redis/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-solve/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-solve/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-util/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache-util/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-Cache/hm-dianping-cache/src/main/resources" charset="UTF-8" />
+  </component>
+</project>

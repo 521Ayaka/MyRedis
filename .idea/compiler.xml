@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="hm-dianping-redis" />
+        <module name="hm-dianping-cache" />
+        <module name="hm-dianping-cache-solve" />
+        <module name="MyRedis-02-SpringDataRedis" />
+        <module name="MyRedis-01-Jedis" />
+        <module name="hm-dianping" />
+        <module name="hm-dianping-cache-util" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="hm-dianping" target="1.8" />
+      <module name="hm-dianping (1)" target="1.8" />
+      <module name="hm-dianping-cache" target="1.8" />
+      <module name="hm-dianping-cache-solve" target="1.8" />
+      <module name="hm-dianping-cache-util" target="1.8" />
+      <module name="hm-dianping-redis" target="1.8" />
+      <module name="MyRedis-01-Jedis" target="11" />
+      <module name="MyRedis-02-SpringDataRedis" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="MyRedis-01-Jedis" options="" />
+      <module name="MyRedis-02-SpringDataRedis" options="-parameters" />
+      <module name="hm-dianping" options="-parameters" />
+      <module name="hm-dianping (1)" options="-parameters" />
+      <module name="hm-dianping-cache" options="-parameters" />
+      <module name="hm-dianping-cache-solve" options="-parameters" />
+      <module name="hm-dianping-cache-util" options="-parameters" />
+      <module name="hm-dianping-redis" options="-parameters" />
+    </option>
+  </component>
+</project>

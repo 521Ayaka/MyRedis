@@ -1,0 +1,9 @@
+
+### 通过id查询商品 接口
+GET http://localhost:8081/shop/1
+Accept: application/json
+
+### 通过id查询商品 接口 [不存在的id 缓存穿透]
+GET http://localhost:8081/shop/1
+Accept: application/json
+

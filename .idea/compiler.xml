@@ -8,10 +8,11 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="MyRedis-02-SpringDataRedis" />
+        <module name="MyRedis-04-CacheIdWorker" />
         <module name="MyRedis-01-Jedis" />
         <module name="MyRedis-02-CacheSolve" />
-        <module name="MyRedis-01-Cache" />
         <module name="MyRedis-03-CacheUtils" />
+        <module name="MyRedis-01-Cache" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -27,6 +28,7 @@
       <module name="MyRedis-02-SpringDataRedis" target="11" />
       <module name="MyRedis-03-Cache" target="1.8" />
       <module name="MyRedis-03-CacheUtils" target="1.8" />
+      <module name="MyRedis-04-CacheIdWorker" target="1.8" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
@@ -37,6 +39,7 @@
       <module name="MyRedis-02-SpringDataRedis" options="-parameters" />
       <module name="MyRedis-03-Cache" options="-parameters" />
       <module name="MyRedis-03-CacheUtils" options="-parameters" />
+      <module name="MyRedis-04-CacheIdWorker" options="-parameters" />
       <module name="hm-dianping" options="-parameters" />
       <module name="hm-dianping (1)" options="-parameters" />
       <module name="hm-dianping-cache" options="-parameters" />

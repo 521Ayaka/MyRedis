@@ -1683,6 +1683,1986 @@ class RedisIdWorkerTests {
 
 
 
+---
+
+
+
+
+
+# Redis解决秒杀卷问题
+
+
+
+
+
+## 秒杀卷库表设计
+
+![image-20221028150115925](MD图片/Redis相关命令-我的笔记.assets/image-20221028150115925.png)
+
+**tb_voucher** 优惠卷的基本信息
+
+![image-20221028150847270](MD图片/Redis相关命令-我的笔记.assets/image-20221028150847270.png)
+
+**tb_seckill_voucher** 特价/秒杀 优惠卷的拓展信息
+
+![image-20221028152907291](MD图片/Redis相关命令-我的笔记.assets/image-20221028152907291.png)
+
+
+
+**SQL**
+
+```MYSQL
+# tb_voucher
+CREATE TABLE `tb_voucher` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `shop_id` bigint(20) unsigned DEFAULT NULL COMMENT '商铺id',
+  `title` varchar(255) NOT NULL COMMENT '代金券标题',
+  `sub_title` varchar(255) DEFAULT NULL COMMENT '副标题',
+  `rules` varchar(1024) DEFAULT NULL COMMENT '使用规则',
+  `pay_value` bigint(10) unsigned NOT NULL COMMENT '支付金额，单位是分。例如200代表2元',
+  `actual_value` bigint(10) NOT NULL COMMENT '抵扣金额，单位是分。例如200代表2元',
+  `type` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT '0,普通券；1,秒杀券',
+  `status` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '1,上架; 2,下架; 3,过期',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+# tb_seckill_voucher
+CREATE TABLE `tb_seckill_voucher` (
+  `voucher_id` bigint(20) unsigned NOT NULL COMMENT '关联的优惠券的id',
+  `stock` int(8) NOT NULL COMMENT '库存',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `begin_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '生效时间',
+  `end_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '失效时间',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`voucher_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT COMMENT='秒杀优惠券表，与优惠券是一对一关系';
+```
+
+
+
+---
+
+
+
+## 添加秒杀卷
+
+VoucherController
+
+```java
+/**
+ * 新增秒杀券
+ * @param voucher 优惠券信息，包含秒杀信息
+ * @return 优惠券id
+ */
+@PostMapping("seckill")
+public Result addSeckillVoucher(@RequestBody Voucher voucher) {
+    voucherService.addSeckillVoucher(voucher);
+    return Result.ok(voucher.getId());
+}
+```
+
+VoucherServiceImpl
+
+```java
+//也就是说 秒杀卷 也包含的普通卷的创建 
+//这里调用的seckillVoucherService业务
+@Override
+@Transactional
+public void addSeckillVoucher(Voucher voucher) {
+    // 保存优惠券
+    save(voucher);
+    // 保存秒杀信息
+    SeckillVoucher seckillVoucher = new SeckillVoucher();
+    seckillVoucher.setVoucherId(voucher.getId());
+    seckillVoucher.setStock(voucher.getStock());
+    seckillVoucher.setBeginTime(voucher.getBeginTime());
+    seckillVoucher.setEndTime(voucher.getEndTime());
+    seckillVoucherService.save(seckillVoucher);
+}
+```
+
+
+
+也就是说 秒杀卷 也包含的普通卷的创建
+
+
+
+```http
+POST	http://localhost:8081/voucher/seckill
+
+{
+    "shopId":1,
+    "title":"100元代金券",
+    "subTitle":"周一至周五均可使用",
+    "rules":"全场通用\\n无需预约\n可无限叠加\\不兑现、不找零\\n仅限堂食",
+    "payValue":8000,
+    "actualValue":10000,
+    "type":1,
+    "stock":100,
+    "beginTime":"2022-10-26T10:01:00",
+    "endTime":"2022-10-31T23:01:00"
+}
+```
+
+
+
+
+
+## 秒杀卷下单
+
+
+
+库表设计：**tb_voucher_order**
+
+![image-20221028151740027](MD图片/Redis相关命令-我的笔记.assets/image-20221028151740027.png)
+
+```mysql
+# tb_vouche_order
+CREATE TABLE `tb_voucher_order` (
+  `id` bigint(20) NOT NULL COMMENT '主键',
+  `user_id` bigint(20) unsigned NOT NULL COMMENT '下单的用户id',
+  `voucher_id` bigint(20) unsigned NOT NULL COMMENT '购买的代金券id',
+  `pay_type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '支付方式 1：余额支付；2：支付宝；3：微信',
+  `status` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '订单状态，1：未支付；2：已支付；3：已核销；4：已取消；5：退款中；6：已退款',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '下单时间',
+  `pay_time` timestamp NULL DEFAULT NULL COMMENT '支付时间',
+  `use_time` timestamp NULL DEFAULT NULL COMMENT '核销时间',
+  `refund_time` timestamp NULL DEFAULT NULL COMMENT '退款时间',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+```
+
+
+
+实体类：Voucher
+
+```java
+@Data
+@EqualsAndHashCode(callSuper = false)
+@Accessors(chain = true)
+@TableName("tb_voucher")
+public class Voucher implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 主键
+     */
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    /**
+     * 商铺id
+     */
+    private Long shopId;
+
+    /**
+     * 代金券标题
+     */
+    private String title;
+
+    /**
+     * 副标题
+     */
+    private String subTitle;
+
+    /**
+     * 使用规则
+     */
+    private String rules;
+
+    /**
+     * 支付金额
+     */
+    private Long payValue;
+
+    /**
+     * 抵扣金额
+     */
+    private Long actualValue;
+
+    /**
+     * 优惠券类型
+     */
+    private Integer type;
+
+    /**
+     * 优惠券类型
+     */
+    private Integer status;
+    /**
+     * 库存
+     */
+    @TableField(exist = false)
+    private Integer stock;
+
+    /**
+     * 生效时间
+     */
+    @TableField(exist = false)
+    private LocalDateTime beginTime;
+
+    /**
+     * 失效时间
+     */
+    @TableField(exist = false)
+    private LocalDateTime endTime;
+
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
+
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+
+
+}
+```
+
+
+
+下单流程：
+
+![image-20221029165002258](MD图片/Redis相关命令-我的笔记.assets/image-20221029165002258.png)
+
+
+
+业务代码：
+
+```java
+package com.hmdp.service.impl;
+
+import com.hmdp.dto.Result;
+import com.hmdp.entity.SeckillVoucher;
+import com.hmdp.entity.Voucher;
+import com.hmdp.entity.VoucherOrder;
+import com.hmdp.mapper.VoucherOrderMapper;
+import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.service.IVoucherOrderService;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.service.IVoucherService;
+import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.utils.UserHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.time.LocalDateTime;
+
+
+/**
+ * <p>
+ *  服务实现类
+ * </p>
+ *
+ */
+@Service
+public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
+
+    @Resource
+    private ISeckillVoucherService iSeckillVoucherService;
+
+    @Resource
+    private RedisIdWorker redisIdWorker;
+
+    /**
+     * 实现订单秒杀业务
+     * @param voucherId
+     * @return
+     */
+    @Override
+    @Transactional //添加上事务
+    public Result seckillVoucher(Long voucherId) {
+        //1.查询优惠卷信息
+        SeckillVoucher voucher = iSeckillVoucherService.getById(voucherId);
+        Integer stock = voucher.getStock();
+        System.out.println(voucher);
+        //2.判断优惠卷是否开始
+        if (voucher.getBeginTime().isAfter(LocalDateTime.now())){
+            //尚未开始，返回异常给前端
+            return Result.fail("秒杀尚未开始！");
+        }
+        //3.判断优惠卷是否过期
+        if (voucher.getEndTime().isBefore(LocalDateTime.now())){
+            //秒杀已结束，返回前端异常信息
+            return Result.fail("秒杀已结束！");
+        }
+        //4.判断优惠卷库存是否充足
+        if (stock < 1){
+            //秒杀卷库存不足，返回给前端异常信息
+            return Result.fail("库存不足！");
+        }
+        //5.扣减库存
+        boolean isOK = iSeckillVoucherService
+                .update()
+                .setSql("stock =stock - 1")
+                .eq("voucher_id", voucherId)
+                .update();
+        if (!isOK){
+            //秒杀失败，返回给前端异常信息
+            return Result.fail("库存不足！");
+        }
+        //6.创建订单
+        VoucherOrder voucherOrder = new VoucherOrder();
+        //6.1.生成订单id
+        long orderId = redisIdWorker.nextId("order");
+        voucherOrder.setId(orderId);
+        //6.2.设置用户id
+        voucherOrder.setUserId(UserHolder.getUser().getId());
+        //6.3.设置代金卷id
+        voucherOrder.setVoucherId(voucherId);
+        //6.4.当生产的订单id写入数据库
+        this.save(voucherOrder);
+
+        //7.返回订单ID
+        return Result.ok(orderId);
+    }
+
+}
+```
+
+存在问题：
+
+1. 【超卖问题】 并发情况下，会出现线程安全问题  【超卖问题】
+2. 【一人一单】 一人可以下多单，应该是一人只能抢一个秒杀卷  【一人一单】
+
+
+
+---
+
+
+
+
+
+## 问题--超卖问题
+
+
+
+![image-20221029170512498](MD图片/Redis相关命令-我的笔记.assets/image-20221029170512498.png)
+
+解决方案 ： 加锁
+
+锁的选择：
+
+![image-20221029170556067](MD图片/Redis相关命令-我的笔记.assets/image-20221029170556067.png)
+
+
+
+乐观锁：
+
+版本号法
+
+![image-20221029170746672](MD图片/Redis相关命令-我的笔记.assets/image-20221029170746672.png)
+
+CAS法
+
+![image-20221029170826616](MD图片/Redis相关命令-我的笔记.assets/image-20221029170826616.png)
+
+
+
+超卖这样的线程安全问题，解决方案有哪些？
+
+1. 悲观锁：添加同步锁，让线程串行执行
+
+   • 优点：简单粗暴
+
+   • 缺点：性能一般
+
+2. 乐观锁：不加锁，在更新时判断是否有其它线程在修改
+
+   • 优点：性能好
+
+   • 缺点：存在成功率低的问题
+
+
+
+解决问题：
+
+![image-20221029173628445](MD图片/Redis相关命令-我的笔记.assets/image-20221029173628445.png)
+
+
+
+```java
+package com.hmdp.service.impl;
+
+import com.hmdp.dto.Result;
+import com.hmdp.entity.SeckillVoucher;
+import com.hmdp.entity.Voucher;
+import com.hmdp.entity.VoucherOrder;
+import com.hmdp.mapper.VoucherOrderMapper;
+import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.service.IVoucherOrderService;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.service.IVoucherService;
+import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.utils.UserHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.time.LocalDateTime;
+
+
+/**
+ * <p>
+ *  服务实现类
+ * </p>
+ *
+ */
+@Service
+public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
+
+    @Resource
+    private ISeckillVoucherService iSeckillVoucherService;
+
+    @Resource
+    private RedisIdWorker redisIdWorker;
+
+    /**
+     * 实现订单秒杀业务
+     * @param voucherId
+     * @return
+     */
+    @Override
+    @Transactional //添加上事务
+    public Result seckillVoucher(Long voucherId) {
+        //1.查询优惠卷信息
+        SeckillVoucher voucher = iSeckillVoucherService.getById(voucherId);
+        Integer stock = voucher.getStock();
+        System.out.println(voucher);
+        //2.判断优惠卷是否开始
+        if (voucher.getBeginTime().isAfter(LocalDateTime.now())){
+            //尚未开始，返回异常给前端
+            return Result.fail("秒杀尚未开始！");
+        }
+        //3.判断优惠卷是否过期
+        if (voucher.getEndTime().isBefore(LocalDateTime.now())){
+            //秒杀已结束，返回前端异常信息
+            return Result.fail("秒杀已结束！");
+        }
+        //4.判断优惠卷库存是否充足
+        if (stock < 1){
+            //秒杀卷库存不足，返回给前端异常信息
+            return Result.fail("库存不足！");
+        }
+        //5.扣减库存
+        boolean isOK = iSeckillVoucherService
+                .update()
+                .setSql("stock =stock - 1")
+                .eq("voucher_id", voucherId)
+                //.eq("stock",stock) // CAS乐观锁
+                .gt("stock",0) 
+            	// CAS乐观锁改进  stock > 0 就可以执行下单业务
+                .update();
+        if (!isOK){
+            //秒杀失败，返回给前端异常信息
+            return Result.fail("库存不足！");
+        }
+        //6.创建订单
+        VoucherOrder voucherOrder = new VoucherOrder();
+        //6.1.生成订单id
+        long orderId = redisIdWorker.nextId("order");
+        voucherOrder.setId(orderId);
+        //6.2.设置用户id
+        voucherOrder.setUserId(UserHolder.getUser().getId());
+        //6.3.设置代金卷id
+        voucherOrder.setVoucherId(voucherId);
+        //6.4.当生产的订单id写入数据库
+        this.save(voucherOrder);
+
+        //7.返回订单ID
+        return Result.ok(orderId);
+    }
+
+}
+```
+
+
+
+
+
+
+
+## 问题--一人一单
+
+
+
+![image-20221029233136089](MD图片/Redis相关命令-我的笔记.assets/image-20221029233136089.png)
+
+
+
+重点！！！！！！！
+
+```Java
+/**
+几个重点：
+1. 一人一单问题使用 悲观锁 还是 乐观锁？
+     使用悲观锁
+2. 使用悲观锁 synchronized 加载 方法上 还是 内部？
+     内部，如果加载方法上，那整个订单业务都是串行，那刚刚解决的 超卖问题[乐观锁]也没意义了
+3. synchronized 的锁对象是什么
+     userId.toString().intern()
+         而不是 userId.toString()
+         Long的 toString() 底层是：
+         return new String(buf, UTF16);
+         .intern()方法是：返回字符串对象的规范表示。
+4. 对于事务的添加 是 锁释放完了再提交 还是 提交完了再释放锁
+     提交完了再释放锁
+     具体操作：
+         1.在方法上加上@Transactional
+         2.在调用者 调用语句外加上 synchronized
+            synchronized (userId.toString().intern()) {
+                return queryOrderVoucherSave(voucherId);
+            }
+5. 事务失效问题
+     spring的事务是 AOP动态代理的
+         this.queryOrderVoucherSave(voucherId) //并非是代理对象
+     解决方法
+         这里使用 获取动态代理的方式 :
+             //获取动态代理对象
+             IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+             //通过代理对象调用
+             proxy.queryOrderVoucherSave(voucherId);
+         注意: 使用AopContext.currentProxy()
+                 导入aspectjweaver依赖
+                 开启 @EnableAspectJAutoProxy(exposeProxy = true) 暴露代理对象
+                 
+*/
+```
+
+
+
+业务的实现
+
+```java
+@Override
+public Result seckillVoucher(Long voucherId) {
+    //1.查询优惠卷信息
+    SeckillVoucher voucher = iSeckillVoucherService.getById(voucherId);
+    Integer stock = voucher.getStock();
+    System.out.println(voucher);
+    //2.判断优惠卷是否开始
+    if (voucher.getBeginTime().isAfter(LocalDateTime.now())) {
+        //尚未开始，返回异常给前端
+        return Result.fail("秒杀尚未开始！");
+    }
+    //3.判断优惠卷是否过期
+    if (voucher.getEndTime().isBefore(LocalDateTime.now())) {
+        //秒杀已结束，返回前端异常信息
+        return Result.fail("秒杀已结束！");
+    }
+    //4.判断优惠卷库存是否充足
+    if (stock < 1) {
+        //秒杀卷库存不足，返回给前端异常信息
+        return Result.fail("库存不足！");
+    }
+
+
+    //一人一单问题
+    //获取用户id
+    Long userId = UserHolder.getUser().getId();
+
+    //缩小悲观锁范围
+    synchronized (userId.toString().intern()) {
+        //获取当前代理对象
+        IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+        //通过代理对象调用 保证事务的正常
+        return proxy.queryOrderVoucherSave(voucherId);
+    }
+
+}
+
+
+@Transactional
+public Result queryOrderVoucherSave(Long voucherId) {
+
+    //获取用户id
+    Long userId = UserHolder.getUser().getId();
+
+    //判断订单表中是否已经存在
+    int count = query()
+            .eq("user_id", userId)
+            .eq("voucher_id", voucherId)
+            .count();
+    if (count > 0) {
+        //存在，返回前端信息
+        return Result.fail("你已领取，每人只能领取一份！");
+    }
+
+    //以上都满足 施行扣减下单业务
+    //5.扣减库存
+    boolean isOK = iSeckillVoucherService
+            .update()
+            .setSql("stock =stock - 1")
+            .eq("voucher_id", voucherId)
+            //.eq("stock",stock) // CAS乐观锁
+            // CAS乐观锁改进  stock > 0 就可以执行下单业务
+            .gt("stock", 0)
+            .update();
+    if (!isOK) {
+        //秒杀失败，返回给前端异常信息
+        return Result.fail("库存不足！");
+    }
+    //6.创建订单
+    VoucherOrder voucherOrder = new VoucherOrder();
+    //6.1.生成订单id
+    long orderId = redisIdWorker.nextId("order");
+    voucherOrder.setId(orderId);
+    //6.2.设置用户id
+    voucherOrder.setUserId(userId);
+    //6.3.设置代金卷id
+    voucherOrder.setVoucherId(voucherId);
+    //6.4.当生产的订单id写入数据库
+    this.save(voucherOrder);
+
+    //7.返回订单ID
+    return Result.ok(orderId);
+
+
+}
+```
+
+暴露代理对象
+
+```xml
+<dependency>
+    <groupId>org.aspectj</groupId>
+    <artifactId>aspectjweaver</artifactId>
+    <version>1.9.9.1</version>
+</dependency>
+```
+
+```java
+//暴露动态代理
+@EnableAspectJAutoProxy(exposeProxy = true)
+@MapperScan("com.hmdp.mapper")
+@SpringBootApplication
+public class SeckillVouchersApp {
+    public static void main(String[] args) {
+        SpringApplication.run(SeckillVouchersApp.class, args);
+    }
+}
+```
+
+
+
+## 以上依然存在问题！
+
+
+
+![image-20221030200606796](MD图片/Redis相关命令-我的笔记.assets/image-20221030200606796.png)
+
+
+
+在集群 或 分布式系统下 ， 每个JVM的锁监视器是独立的，就会出现并发安全问题
+
+解决方案：使用 分布式锁
+
+下面👇
+
+
+
+---
+
+# 分布式锁
+
+
+
+## 分布式锁
+
+什么是分布式锁
+
+![image-20221030200931213](MD图片/Redis相关命令-我的笔记.assets/image-20221030200931213.png)
+
+分布式锁的实现
+
+![image-20221030201024610](MD图片/Redis相关命令-我的笔记.assets/image-20221030201024610.png)
+
+
+
+
+
+## 基于Redis的分布式锁
+
+
+
+![image-20221030201149540](MD图片/Redis相关命令-我的笔记.assets/image-20221030201149540.png)
+
+
+
+### 一个简单的实现：
+
+```java
+/**
+ * 基于Redis的分布式锁
+ */
+public interface ILock {
+
+    /**
+     * 尝试获取锁
+     * @param timeoutSec 兜底过期时间
+     * @return 获取是否成功 true成功
+     */
+    boolean tryLock(long timeoutSec);
+
+    /**
+     * 释放锁
+     */
+    void unLock();
+
+}
+```
+
+impl
+
+```java
+package com.hmdp.utils;
+
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.BooleanUtil;
+import org.springframework.data.redis.core.StringRedisTemplate;
+
+import java.util.concurrent.TimeUnit;
+
+public class LockImpl implements ILock{
+
+    /**
+     * redis
+     */
+    private StringRedisTemplate stringRedisTemplate;
+    /**
+     * 锁名称
+     */
+    private String name;
+    public LockImpl(StringRedisTemplate stringRedisTemplate, String name) {
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.name = name;
+    }
+
+    /**
+     * 锁前缀
+     */
+    private static final String KEY_PREFIX = "lock:";
+
+    /**
+     * 锁的唯一标识
+     */
+    private String ID_PREFIX = UUID.randomUUID().toString(true);
+
+    /**
+     * 尝试获取锁
+     * @param timeoutSec 兜底过期时间
+     * @return 获取是否成功 true成功
+     */
+    @Override
+    public boolean tryLock(long timeoutSec) {
+        // 锁的唯一标识：这里用 UUID + 线程id
+        String value = ID_PREFIX + Thread.currentThread().getId();
+        // 获取锁的 key
+        String key = KEY_PREFIX + name;
+
+        //尝试获取锁
+        Boolean isLock = stringRedisTemplate
+                .opsForValue()
+                .setIfAbsent(key, value, timeoutSec, TimeUnit.SECONDS);
+
+        //返回结果
+        //return Boolean.TRUE.equals(isLock); //或者 👇
+        return BooleanUtil.isTrue(isLock);
+    }
+
+
+    /**
+     * 释放锁
+     */
+    @Override
+    public void unLock() {
+        //释放锁
+        Boolean delete = stringRedisTemplate.delete(KEY_PREFIX + name);
+    }
+
+}
+```
+
+业务：
+
+```java
+package com.hmdp.service.impl;
+
+import com.hmdp.dto.Result;
+import com.hmdp.entity.SeckillVoucher;
+import com.hmdp.entity.VoucherOrder;
+import com.hmdp.mapper.VoucherOrderMapper;
+import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.service.IVoucherOrderService;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.utils.LockImpl;
+import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.utils.UserHolder;
+import org.springframework.aop.framework.AopContext;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.time.LocalDateTime;
+
+
+/**
+ * <p>
+ * 服务实现类
+ * </p>
+ */
+@Service
+public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
+
+    @Resource
+    private ISeckillVoucherService iSeckillVoucherService;
+
+    @Resource
+    private RedisIdWorker redisIdWorker;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    /**
+     * 实现订单秒杀业务
+     *
+     * @param voucherId
+     * @return
+     */
+    @Override
+    public Result seckillVoucher(Long voucherId) {
+        //1.查询优惠卷信息
+        SeckillVoucher voucher = iSeckillVoucherService.getById(voucherId);
+        Integer stock = voucher.getStock();
+        System.out.println(voucher);
+        //2.判断优惠卷是否开始
+        if (voucher.getBeginTime().isAfter(LocalDateTime.now())) {
+            //尚未开始，返回异常给前端
+            return Result.fail("秒杀尚未开始！");
+        }
+        //3.判断优惠卷是否过期
+        if (voucher.getEndTime().isBefore(LocalDateTime.now())) {
+            //秒杀已结束，返回前端异常信息
+            return Result.fail("秒杀已结束！");
+        }
+        //4.判断优惠卷库存是否充足
+        if (stock < 1) {
+            //秒杀卷库存不足，返回给前端异常信息
+            return Result.fail("库存不足！");
+        }
+
+
+        //一人一单问题
+        //获取用户id
+        Long userId = UserHolder.getUser().getId();
+
+        //缩小悲观锁范围
+        /*synchronized (userId.toString().intern()) {
+            //获取当前代理对象
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            //通过代理对象调用 保证事务的正常
+            return proxy.queryOrderVoucherSave(voucherId);
+        }*/
+
+        //获取分布式锁对象
+        LockImpl lock = new LockImpl(stringRedisTemplate,"order:" + userId);
+        //尝试获取锁
+        boolean isLock = lock.tryLock(1200);
+        //判断是否获取成功
+        if (!isLock){
+            //获取锁失败
+            return Result.fail("不能重复下单！");
+        }
+        //成功 执行业务
+        try{
+            //获取当前代理对象
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            //通过代理对象调用 保证事务的正常
+            return proxy.queryOrderVoucherSave(voucherId);
+        }finally{
+            //确保锁的释放
+            lock.unLock();
+        }
+
+
+    }
+
+
+    /**
+     *<br> 几个重点：
+     *<br> 1. 一人一单问题使用 悲观锁 还是 乐观锁？
+     *<br>      使用悲观锁
+     *<br> 2. 使用悲观锁 synchronized 加载 方法上 还是 内部？
+     *<br>      内部，如果加载方法上，那整个订单业务都是串行，那刚刚解决的 超卖问题[乐观锁]也没意义了
+     *<br> 3. synchronized 的锁对象是什么
+     *<br>      userId.toString().intern()
+     *<br>          而不是 userId.toString()
+     *<br>          Long的 toString() 底层是：
+     *<br>          return new String(buf, UTF16);
+     *<br>          .intern()方法是：返回字符串对象的规范表示。
+     *<br> 4. 对于事务的添加 是 锁释放完了再提交 还是 提交完了再释放锁
+     *<br>      提交完了再释放锁
+     *<br>      具体操作：
+     *<br>          1.在方法上加上@Transactional
+     *<br>          2.在调用者 调用语句外加上 synchronized
+     *<br>             synchronized (userId.toString().intern()) {
+     *<br>                 return queryOrderVoucherSave(voucherId);
+     *<br>             }
+     *<br> 5. 事务失效问题
+     *<br>      spring的事务是 AOP动态代理的
+     *<br>          this.queryOrderVoucherSave(voucherId) //并非是代理对象
+     *<br>      解决方法
+     *<br>          这里使用 获取动态代理的方式 :
+     *<br>              //获取动态代理对象
+     *<br>              IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+     *<br>              //通过代理对象调用
+     *<br>              proxy.queryOrderVoucherSave(voucherId);
+     *<br>          注意: 使用AopContext.currentProxy()
+     *<br>                  导入aspectjweaver依赖
+     *<br>                  开启 @EnableAspectJAutoProxy(exposeProxy = true) 暴露代理对象
+     *<br>
+     *<br> @param voucherId
+     *<br> @return
+     */
+    @Transactional
+    public Result queryOrderVoucherSave(Long voucherId) {
+
+        //获取用户id
+        Long userId = UserHolder.getUser().getId();
+
+        //判断订单表中是否已经存在
+        int count = query()
+                .eq("user_id", userId)
+                .eq("voucher_id", voucherId)
+                .count();
+        if (count > 0) {
+            //存在，返回前端信息
+            return Result.fail("你已领取，每人只能领取一份！");
+        }
+
+        //以上都满足 施行扣减下单业务
+        //5.扣减库存
+        boolean isOK = iSeckillVoucherService
+                .update()
+                .setSql("stock =stock - 1")
+                .eq("voucher_id", voucherId)
+                //.eq("stock",stock) // CAS乐观锁
+                // CAS乐观锁改进  stock > 0 就可以执行下单业务
+                .gt("stock", 0)
+                .update();
+        if (!isOK) {
+            //秒杀失败，返回给前端异常信息
+            return Result.fail("库存不足！");
+        }
+        //6.创建订单
+        VoucherOrder voucherOrder = new VoucherOrder();
+        //6.1.生成订单id
+        long orderId = redisIdWorker.nextId("order");
+        voucherOrder.setId(orderId);
+        //6.2.设置用户id
+        voucherOrder.setUserId(userId);
+        //6.3.设置代金卷id
+        voucherOrder.setVoucherId(voucherId);
+        //6.4.当生产的订单id写入数据库
+        this.save(voucherOrder);
+
+        //7.返回订单ID
+        return Result.ok(orderId);
+
+    }
+
+
+}
+```
+
+
+
+
+
+### 存在的问题：误删问题
+
+上面的简单实现
+
+在正常情况下：
+
+![image-20221030213559181](MD图片/Redis相关命令-我的笔记.assets/image-20221030213559181.png)
+
+极端情况下：
+
+![image-20221030214121368](MD图片/Redis相关命令-我的笔记.assets/image-20221030214121368.png)
+
+解决方案：
+
+![image-20221030214149274](MD图片/Redis相关命令-我的笔记.assets/image-20221030214149274.png)
+
+对 上面代码优化：
+
+impl
+
+```java
+package com.hmdp.utils;
+
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.BooleanUtil;
+import org.springframework.data.redis.core.StringRedisTemplate;
+
+import java.util.concurrent.TimeUnit;
+
+public class LockImpl implements ILock{
+
+    /**
+     * redis
+     */
+    private StringRedisTemplate stringRedisTemplate;
+    /**
+     * 锁名称
+     */
+    private String name;
+    public LockImpl(StringRedisTemplate stringRedisTemplate, String name) {
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.name = name;
+    }
+
+    /**
+     * 锁前缀
+     */
+    private static final String KEY_PREFIX = "lock:";
+
+    /**
+     * 锁的唯一标识
+     */
+    private String ID_PREFIX = UUID.randomUUID().toString(true);
+
+    /**
+     * 尝试获取锁
+     * @param timeoutSec 兜底过期时间
+     * @return 获取是否成功 true成功
+     */
+    @Override
+    public boolean tryLock(long timeoutSec) {
+        // 锁的唯一标识：这里用 UUID + 线程id
+        String value = ID_PREFIX + Thread.currentThread().getId();
+        // 获取锁的 key
+        String key = KEY_PREFIX + name;
+
+        //尝试获取锁
+        Boolean isLock = stringRedisTemplate
+                .opsForValue()
+                .setIfAbsent(key, value, timeoutSec, TimeUnit.SECONDS);
+
+        //返回结果
+        //return Boolean.TRUE.equals(isLock); //或者 👇
+        return BooleanUtil.isTrue(isLock);
+    }
+
+
+    /**
+     * 释放锁
+     */
+    @Override
+    public void unLock() {
+
+        //判断将要释放的锁 的 线程表示是否一致 解决分布式锁误删问题
+
+        //锁的唯一标识：这里用 UUID + 线程id
+        String value = ID_PREFIX + Thread.currentThread().getId();
+        //获取锁的 key
+        String key = KEY_PREFIX + name;
+        //获取锁的标识
+        String value2 = stringRedisTemplate.opsForValue().get(key);
+
+        //判断将要释放的锁 的 线程表示是否一致 解决分布式锁误删问题
+        if (value.equals(value2)){
+            //释放锁
+            stringRedisTemplate.delete(key);
+        }
+        //否则 不释放锁
+    }
+
+}
+
+```
+
+
+
+
+
+
+
+### 依然存在问题：原子性
+
+删除锁时 判断锁的标识 和 释放锁 并发问题
+
+极端情况下：
+
+判断锁的标识 后 发生阻塞，超时释放了锁，此时其它线程获取锁，那么这个线程释放的锁 就是 其他线程的锁了
+
+![image-20221030221249309](MD图片/Redis相关命令-我的笔记.assets/image-20221030221249309.png)
+
+改进方案：
+
+1. Redis的事务功能：麻烦不用
+2. Redis的Lua脚本
+
+
+
+**Redis的Lua脚本**
+
+> Redis提供了Lua脚本功能，在一个脚本中编写多条Redis命令，确保多条命令执行时的原子性。Lua是一种 编程语言，它的基本语法大家可以参考网站：https://www.runoob.com/lua/lua-tutorial.html 这里重点介绍Redis提供的调用函数，语法如下：
+>
+> ```LUA
+> # 执行redis命令
+> redis.call('命令名称', 'key', '其它参数', ...)
+> ```
+>
+> 例如，我们要执行set name jack，则脚本是这样：
+>
+> ```LUA
+> # 执行 set name jack
+> redis.call('set', 'name', 'jack')
+> ```
+>
+> 例如，我们要先执行set name Rose，再执行get name，则脚本如下：
+>
+> ```LUA
+>  先执行 set name jack
+> redis.call('set', 'name', 'jack')
+> # 再执行 get name
+> local name = redis.call('get', 'name')
+> # 返回
+> return name
+> ```
+>
+>
+
+
+
+**Redis的Lua脚本的执行**
+
+![image-20221030222016825](MD图片/Redis相关命令-我的笔记.assets/image-20221030222016825.png)
+
+
+
+释放锁的业务流程是这样的：
+
+1. 获取锁中的线程标示
+
+2. 判断是否与指定的标示（当前线程标示）一致
+
+3. 如果一致则释放锁（删除）
+
+4. 如果不一致则什么都不做 如果用Lua脚本来表示则是这样的：
+
+   ```lua
+   -- 这里的 KEYS[1] 就是锁的key，这里的ARGV[1] 就是当前线程标示
+   -- 获取锁中的标示，判断是否与当前线程标示一致
+   if (redis.call('GET', KEYS[1]) == ARGV[1]) then
+   -- 一致，则删除锁
+   return redis.call('DEL', KEYS[1])
+   end
+   -- 不一致，则直接返回
+   return 0
+   ```
+
+
+
+
+
+对之前的impl进行优化：
+
+resources/unlock.lua
+
+```lua
+-- 这里的 KEYS[1] 就是锁的key，这里的ARGV[1] 就是当前线程标示
+-- 获取锁中的标示，判断是否与当前线程标示一致
+
+if (redis.call('GET', KEYS[1]) == ARGV[1]) then
+    -- 一致，则删除锁
+    return redis.call('DEL', KEYS[1])
+end
+
+-- 不一致，则直接返回
+return 0
+```
+
+impl
+
+```java
+package com.hmdp.utils;
+
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.BooleanUtil;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+
+public class LockImpl implements ILock{
+
+    /**
+     * redis
+     */
+    private StringRedisTemplate stringRedisTemplate;
+    /**
+     * 锁名称
+     */
+    private String name;
+    public LockImpl(StringRedisTemplate stringRedisTemplate, String name) {
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.name = name;
+    }
+
+    /**
+     * 锁前缀
+     */
+    private static final String KEY_PREFIX = "lock:";
+
+    /**
+     * 锁的唯一标识
+     */
+    private String ID_PREFIX = UUID.randomUUID().toString(true);
+
+    /**
+     * 初始化Lua脚本对象   RedisScript的实现类
+     */
+    private static final  DefaultRedisScript<Long> UNLOCK_SCRIPT;
+    static {
+        //创建 RedisScript的实现类 DefaultRedisScript
+        UNLOCK_SCRIPT = new DefaultRedisScript<Long>();
+        //设置Lua脚本位置
+        UNLOCK_SCRIPT.setLocation(new ClassPathResource("unlock.lua"));
+        //设置脚本执行后的返回值类型
+        UNLOCK_SCRIPT.setResultType(Long.class);
+    }
+
+
+    /**
+     * 尝试获取锁
+     * @param timeoutSec 兜底过期时间
+     * @return 获取是否成功 true成功
+     */
+    @Override
+    public boolean tryLock(long timeoutSec) {
+        // 锁的唯一标识：这里用 UUID + 线程id
+        String value = ID_PREFIX + Thread.currentThread().getId();
+        // 获取锁的 key
+        String key = KEY_PREFIX + name;
+
+        //尝试获取锁
+        Boolean isLock = stringRedisTemplate
+                .opsForValue()
+                .setIfAbsent(key, value, timeoutSec, TimeUnit.SECONDS);
+
+        //返回结果
+        //return Boolean.TRUE.equals(isLock); //或者 👇
+        return BooleanUtil.isTrue(isLock);
+    }
+
+
+    /**
+     * 释放锁
+     */
+    @Override
+    public void unLock() {
+
+        //判断将要释放的锁 的 线程表示是否一致 解决分布式锁误删问题
+
+        //锁的唯一标识：这里用 UUID + 线程id
+        String value = ID_PREFIX + Thread.currentThread().getId();
+        //获取锁的 key
+        String key = KEY_PREFIX + name;
+
+        //判断将要释放的锁 的 线程表示是否一致 解决分布式锁误删问题
+        //使用Lua脚本 确保 [判断标识] 和 [释放锁] 的 原子性
+        stringRedisTemplate
+                .execute(UNLOCK_SCRIPT, //Lua脚本对象
+                         Collections.singletonList(key), //KEYS[1] list
+                         value); //ARGV[1] object
+
+        //否则 不释放锁
+    }
+
+
+}
+
+```
+
+
+
+到此 实现了一个较为完善的 基于Redis的分布式锁
+
+但是.......在某些场景下 依然需要优化.......
+
+
+
+---
+
+
+
+
+
+### 基于Redis的分布式锁优化
+
+---
+
+还有些问题可以进一步优化：
+
+![image-20221030231315439](MD图片/Redis相关命令-我的笔记.assets/image-20221030231315439.png)
+
+
+
+这些实现起来比较繁琐
+
+可以使用开源框架去解决：
+
+**使用 Redisson **👇
+
+---
+
+
+
+
+
+
+
+
+
+
+
+## Redisson解决Redis分布式锁
+
+
+
+
+
+### Redisson介绍
+
+---
+
+
+
+Redisson Redisson是一个在Redis的基础上实现的Java驻内存数据网格（In-Memory Data Grid）。
+
+它不仅提供了一系列的分布 式的Java常用对象，还提供了许多分布式服务，其中就包含了各种分布式锁的实现。
+
+![image-20221031105827347](MD图片/Redis相关命令-我的笔记.assets/image-20221031105827347.png)
+
+
+
+官网地址： https://redisson.org
+
+GitHub地址： https://github.com/redisson/redisson
+
+
+
+简单的使用
+
+```java
+package com.hmdp.config;
+
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+
+/**
+ * Redisson 初始化配置
+ */
+@Configuration
+public class RedissonConfig {
+
+    @Bean
+    public RedissonClient redissonClient1() {
+
+        Config config = new Config();
+        //链接Redis
+        config.useSingleServer()
+                .setAddress("redis://ayaka520:6379")
+                .setPassword("gangajiang521");
+	    //解耦合 可以使用yaml的方式 解耦合
+        //通过Redisson.create(config) 指定配置文件 创建RedissonClient
+        return Redisson.create(config);
+    }
+
+    //@Bean
+    public RedissonClient redissonClient2() {
+        Config config = new Config();
+        config.useSingleServer().setAddress("redis://ayaka521:6380");
+        return Redisson.create(config);
+    }
+
+    //@Bean
+    public RedissonClient redissonClient3() {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://ayaka521:6381");
+        return Redisson.create(config);
+    }
+
+}
+```
+
+业务改造
+
+```java
+package com.hmdp.service.impl;
+
+import com.hmdp.dto.Result;
+import com.hmdp.entity.SeckillVoucher;
+import com.hmdp.entity.VoucherOrder;
+import com.hmdp.mapper.VoucherOrderMapper;
+import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.service.IVoucherOrderService;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.utils.UserHolder;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.aop.framework.AopContext;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.time.LocalDateTime;
+
+
+/**
+ * <p>
+ * 服务实现类
+ * </p>
+ */
+@Service
+public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
+
+    @Resource
+    private ISeckillVoucherService iSeckillVoucherService;
+
+    @Resource
+    private RedisIdWorker redisIdWorker;
+
+    //@Resource
+    //private StringRedisTemplate stringRedisTemplate;
+
+    /**
+     * Redisson
+     */
+    @Resource
+    private RedissonClient redissonClient;
+
+    /**
+     * 实现订单秒杀业务
+     *
+     * @param voucherId
+     * @return
+     */
+    @Override
+    public Result seckillVoucher(Long voucherId) {
+        //1.查询优惠卷信息
+        SeckillVoucher voucher = iSeckillVoucherService.getById(voucherId);
+        Integer stock = voucher.getStock();
+        //2.判断优惠卷是否开始
+        if (voucher.getBeginTime().isAfter(LocalDateTime.now())) {
+            //尚未开始，返回异常给前端
+            return Result.fail("秒杀尚未开始！");
+        }
+        //3.判断优惠卷是否过期
+        if (voucher.getEndTime().isBefore(LocalDateTime.now())) {
+            //秒杀已结束，返回前端异常信息
+            return Result.fail("秒杀已结束！");
+        }
+        //4.判断优惠卷库存是否充足
+        if (stock < 1) {
+            //秒杀卷库存不足，返回给前端异常信息
+            return Result.fail("库存不足！");
+        }
+
+
+        //一人一单问题
+        //获取用户id
+        Long userId = UserHolder.getUser().getId();
+
+        //缩小悲观锁范围
+        /*synchronized (userId.toString().intern()) {
+            //获取当前代理对象
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            //通过代理对象调用 保证事务的正常
+            return proxy.queryOrderVoucherSave(voucherId);
+        }*/
+
+        //获取分布式锁对象
+        //LockImpl lock = new LockImpl(stringRedisTemplate,"order:" + userId);
+
+        //从Redisson中获取锁
+        RLock lock = redissonClient.getLock("lock:order:" + userId);
+
+        //尝试获取锁
+        boolean isLock = lock.tryLock();
+
+        //判断是否获取成功
+        if (!isLock){
+            //获取锁失败
+            return Result.fail("不能重复下单！");
+        }
+        //成功 执行业务
+        try{
+            //获取当前代理对象
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            //通过代理对象调用 保证事务的正常
+            return proxy.queryOrderVoucherSave(voucherId);
+        }finally{
+            //确保锁的释放
+            lock.unlock();
+        }
+    }
+
+    @Transactional
+    public Result queryOrderVoucherSave(Long voucherId) {
+
+        //获取用户id
+        Long userId = UserHolder.getUser().getId();
+
+        //判断订单表中是否已经存在
+        int count = query()
+                .eq("user_id", userId)
+                .eq("voucher_id", voucherId)
+                .count();
+        if (count > 0) {
+            //存在，返回前端信息
+            return Result.fail("你已领取，每人只能领取一份！");
+        }
+
+        //以上都满足 施行扣减下单业务
+        //5.扣减库存
+        boolean isOK = iSeckillVoucherService
+                .update()
+                .setSql("stock =stock - 1")
+                .eq("voucher_id", voucherId)
+                //.eq("stock",stock) // CAS乐观锁
+                // CAS乐观锁改进  stock > 0 就可以执行下单业务
+                .gt("stock", 0)
+                .update();
+        if (!isOK) {
+            //秒杀失败，返回给前端异常信息
+            return Result.fail("库存不足！");
+        }
+        //6.创建订单
+        VoucherOrder voucherOrder = new VoucherOrder();
+        //6.1.生成订单id
+        long orderId = redisIdWorker.nextId("order");
+        voucherOrder.setId(orderId);
+        //6.2.设置用户id
+        voucherOrder.setUserId(userId);
+        //6.3.设置代金卷id
+        voucherOrder.setVoucherId(voucherId);
+        //6.4.当生产的订单id写入数据库
+        this.save(voucherOrder);
+
+        //7.返回订单ID
+        return Result.ok(orderId);
+
+    }
+
+
+}
+```
+
+
+
+
+
+
+
+![image-20221030231315439](MD图片/Redis相关命令-我的笔记.assets/image-20221030231315439.png)
+
+
+
+
+
+### Redisson可重入锁问题
+
+
+
+
+
+**原理：**
+
+![image-20221031105235063](MD图片/Redis相关命令-我的笔记.assets/image-20221031105235063.png)
+
+
+
+
+
+---
+
+**使用Lua脚本实现 --- 获取锁**
+
+![image-20221031110822288](MD图片/Redis相关命令-我的笔记.assets/image-20221031110822288.png)
+
+源码：
+
+```java
+<T> RFuture<T> tryLockInnerAsync(long waitTime, long leaseTime, TimeUnit unit, long threadId, RedisStrictCommand<T> command) {
+    return evalWriteAsync(getRawName(), LongCodec.INSTANCE, command,
+            "if (redis.call('exists', KEYS[1]) == 0) then " +
+                    "redis.call('hincrby', KEYS[1], ARGV[2], 1); " +
+                    "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+                    "return nil; " +
+                    "end; " +
+                    "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
+                    "redis.call('hincrby', KEYS[1], ARGV[2], 1); " +
+                    "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+                    "return nil; " +
+                    "end; " +
+                    "return redis.call('pttl', KEYS[1]);",
+            Collections.singletonList(getRawName()), unit.toMillis(leaseTime), getLockName(threadId));
+}
+```
+
+
+
+
+
+---
+
+**使用Lua脚本实现 --- 释放锁**
+
+![image-20221031111022292](MD图片/Redis相关命令-我的笔记.assets/image-20221031111022292.png)
+
+源码：
+
+```java
+protected RFuture<Boolean> unlockInnerAsync(long threadId) {
+    return evalWriteAsync(getRawName(), LongCodec.INSTANCE, RedisCommands.EVAL_BOOLEAN,
+            "if (redis.call('hexists', KEYS[1], ARGV[3]) == 0) then " +
+                    "return nil;" +
+                    "end; " +
+                    "local counter = redis.call('hincrby', KEYS[1], ARGV[3], -1); " +
+                    "if (counter > 0) then " +
+                    "redis.call('pexpire', KEYS[1], ARGV[2]); " +
+                    "return 0; " +
+                    "else " +
+                    "redis.call('del', KEYS[1]); " +
+                    "redis.call('publish', KEYS[2], ARGV[1]); " +
+                    "return 1; " +
+                    "end; " +
+                    "return nil;",
+            Arrays.asList(getRawName(), getChannelName()), LockPubSub.UNLOCK_MESSAGE, internalLockLeaseTime, getLockName(threadId));
+}
+```
+
+
+
+
+
+### 可重试--WatchDog机制
+
+---
+
+源码jiji看 jiji分析
+
+
+
+### 超时释放--发布订阅/信号量
+
+---
+
+源码jiji看 jiji分析
+
+
+
+
+
+### Redisson分布式锁的原理
+
+![image-20221102084703840](MD图片/Redis相关命令-我的笔记.assets/image-20221102084703840.png)
+
+
+
+Redisson分布式锁原理：
+
+- 可重入：利用hash结构记录线程id和重入次数
+- 可重试：利用信号量和PubSub功能实现等待、唤醒，获取 锁失败的重试机制
+- 超时续约：利用watchDog，每隔一段时间（releaseTime  / 3），重置超时时间
+
+
+
+---
+
+---
+
+
+
+
+
+
+
+
+
+### Redisson主从一致性问题
+
+---
+
+![image-20221102090850998](MD图片/Redis相关命令-我的笔记.assets/image-20221102090850998.png)
+
+
+
+![image-20221102091109610](MD图片/Redis相关命令-我的笔记.assets/image-20221102091109610.png)
+
+**使用:**
+
+RedissonConfig
+
+```java
+package com.hmdp.config;
+
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.io.IOException;
+
+/**
+ * Redisson 初始化配置
+ */
+@Configuration
+public class RedissonConfig {
+
+    @Bean
+    public RedissonClient redissonClient1() throws IOException {
+
+        Config config = new Config();
+        //链接Redis
+        config.useSingleServer()
+                .setAddress("redis://ayaka520:6379")
+                .setPassword("gangajiang521");
+
+        //通过Redisson.create(config) 指定配置文件 创建RedissonClient
+        return Redisson.create(config);
+    }
+
+    @Bean
+    public RedissonClient redissonClient2() throws IOException {
+        Config config = new Config();
+        config.useSingleServer().setAddress("redis://ayaka521:6380");
+        return Redisson.create(config);
+    }
+
+    @Bean
+    public RedissonClient redissonClient3() throws IOException {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://ayaka521:6381");
+        return Redisson.create(config);
+    }
+
+
+}
+```
+
+RedissonTests
+
+```java
+package com.hmdp;
+
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import javax.annotation.Resource;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+@SpringBootTest
+class RedissonTest {
+
+    @Resource
+    private RedissonClient redissonClient1;
+
+    @Resource
+    private RedissonClient redissonClient2;
+
+    @Resource
+    private RedissonClient redissonClient3;
+
+    
+    private RLock lock;
+    //创建连锁
+    @BeforeEach
+    void setUp() {
+        //获取 RLock对象
+        RLock lock1 = redissonClient1.getLock("lock:test");
+        RLock lock2 = redissonClient2.getLock("lock:test");
+        RLock lock3 = redissonClient3.getLock("lock:test");
+        //创建连锁
+        lock = redissonClient1.getMultiLock(lock1,lock2,lock3);
+    }
+
+
+    @Test
+    void method1() throws InterruptedException {
+        // 尝试获取锁
+        boolean isLock = lock.tryLock(1L, TimeUnit.SECONDS);
+        if (!isLock) {
+            log.error("获取锁失败 .... 1");
+            return;
+        }
+        try {
+            log.info("获取锁成功 .... 1");
+            method2();
+            log.info("开始执行业务 ... 1");
+        } finally {
+            log.warn("准备释放锁 .... 1");
+            lock.unlock();
+        }
+    }
+    void method2() {
+        // 尝试获取锁
+        boolean isLock = lock.tryLock();
+        if (!isLock) {
+            log.error("获取锁失败 .... 2");
+            return;
+        }
+        try {
+            log.info("获取锁成功 .... 2");
+            log.info("开始执行业务 ... 2");
+        } finally {
+            log.warn("准备释放锁 .... 2");
+            lock.unlock();
+        }
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 总结
+
+---
+
+> ## 总结
+>
+> 1）不可重入Redis分布式锁：
+>
+> - 原理：利用setnx的互斥性；利用ex避免死锁；释放锁时判 断线程标示
+>
+> - 缺陷：不可重入、无法重试、锁超时失效
+>
+>
+>
+> 2）可重入的Redis分布式锁：
+>
+> - 原理：利用hash结构，记录线程标示和重入次数；利用 watchDog延续锁时间；利用>信号量控制锁重试等待
+>
+> - 缺陷：redis宕机引起锁失效问题
+>
+> ![image-20221102084703840](MD图片/Redis相关命令-我的笔记.assets/image-20221102084703840.png)
+>
+>
+>
+>
+>
+> 3）Redisson的multiLock：
+>
+> - 原理：多个独立的Redis节点，必须在所有节点都获取重入锁，才算获取锁成功
+> - 缺陷：运维成本高、实现复杂
+>
+>
+>
+> ![image-20221102091109610](MD图片/Redis相关命令-我的笔记.assets/image-20221102091109610.png)
+>
+>
+
+
+
+这样就就觉了分布式锁的问题
+
+但是，还可以继续优化：
+
+---
+
+
+
+
+
+
+
+
+
+
+
+# 基于Redis的消息队列
+
+---
+
+
+
+
+
+## 秒杀业务的优化
+
+
+
+![image-20221104151321789](MD图片/Redis相关命令-我的笔记.assets/image-20221104151321789.png)
+
+改进方案：
+
+![image-20221104151803752](MD图片/Redis相关命令-我的笔记.assets/image-20221104151803752.png)
+
+![image-20221104151933960](MD图片/Redis相关命令-我的笔记.assets/image-20221104151933960.png)
+
+
+
+
+
+![image-20221104152114257](MD图片/Redis相关命令-我的笔记.assets/image-20221104152114257.png)
+
+
+
+
+
+
+
+
+
+
+
 
 
 

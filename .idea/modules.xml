@@ -13,6 +13,9 @@
       <module fileurl="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/MyRedis-02-SpringDataRedis.iml" filepath="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/MyRedis-02-SpringDataRedis.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-03-CacheUtils/MyRedis-03-CacheUtils.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-03-CacheUtils/MyRedis-03-CacheUtils.iml" />
       <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-04-CacheIdWorker/MyRedis-04-CacheIdWorker.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-04-CacheIdWorker/MyRedis-04-CacheIdWorker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-05-SeckillVouchers/MyRedis-05-SeckillVouchers.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-05-SeckillVouchers/MyRedis-05-SeckillVouchers.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-06-DistributedLock/MyRedis-06-DistributedLock.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-06-DistributedLock/MyRedis-06-DistributedLock.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-07-MessageQueue/MyRedis-07-MessageQueue.iml" filepath="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-07-MessageQueue/MyRedis-07-MessageQueue.iml" />
       <module fileurl="file://$PROJECT_DIR$/测试用例/测试用例/测试用例.iml" filepath="$PROJECT_DIR$/测试用例/测试用例/测试用例.iml" />
     </modules>
   </component>

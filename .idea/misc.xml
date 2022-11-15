@@ -16,6 +16,9 @@
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Cache/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-01-Jedis/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-05-SeckillVouchers/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-06-DistributedLock/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-07-MessageQueue/pom.xml" />
       </list>
     </option>
   </component>

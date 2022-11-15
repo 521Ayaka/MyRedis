@@ -15,5 +15,11 @@
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-03-CacheUtils/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-04-CacheIdWorker/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-04-CacheIdWorker/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-05-SeckillVouchers/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-05-SeckillVouchers/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-06-DistributedLock/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-06-DistributedLock/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-07-MessageQueue/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-07-MessageQueue/src/main/resources" charset="UTF-8" />
   </component>
 </project>

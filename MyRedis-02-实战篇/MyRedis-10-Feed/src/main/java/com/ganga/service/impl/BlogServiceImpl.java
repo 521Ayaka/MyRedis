@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ganga.dto.ScoreResult;
 import com.ganga.dto.UserDTO;
 import com.ganga.entity.Follow;
 import com.ganga.entity.User;
@@ -17,10 +18,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ganga.service.IFollowService;
 import com.ganga.utils.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -223,8 +227,55 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         //1.获取用户id
         Long userId = UserHolder.getUser().getId();
         //2.从Redis用户信箱中取出 关注用的发布的博客
-        //TODO:
-        return null;
+        String key = FEED_USER_KEY + userId.toString();
+        Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate
+                        .opsForZSet()
+                        .reverseRangeByScoreWithScores(key, 0, maxTime, offset, 2);
+        //3.判断邮件是否为空
+        if (ObjectUtil.isEmpty(typedTuples)){
+            return Result.ok();
+        }
+
+        //4.进行解析 博客id集合 当前页最小时间戳:minTime 最小时间戳出现的次数
+        ArrayList<Long> blogIds = new ArrayList<>(typedTuples.size());
+        long minTime = 0;
+        int minCount = 1;
+        for (ZSetOperations.TypedTuple<String> tuple : typedTuples) {
+            //关注的博客id
+            Long blogId = Long.valueOf(tuple.getValue());
+            blogIds.add(blogId);
+            //获取最小分数 和 最小分数个数
+            long score = tuple.getScore().longValue();
+            if (score == minTime){
+                minCount ++;
+            }else{
+                minTime = score;
+                minCount = 1;
+            }
+        }
+
+        //5.根据 博客id集合 查询博客对象
+        String idStr = StrUtil.join(",", blogIds);
+        List<Blog> blogs = query()
+                .in("id", blogIds)
+                .last("order by field(id," + idStr + ")")
+                .list();
+        //给博客封装非数据库字段
+        blogs.forEach(blog -> {
+            //封装后的 blog 对象
+            queryUserBlog(blog);
+            // 判断用户是否点赞
+            isLiked(blog);
+        });
+
+        //6.封装 ScoreResult 对象
+        ScoreResult scoreResult = new ScoreResult();
+        scoreResult.setList(blogs);
+        scoreResult.setMinTime(minTime);
+        scoreResult.setOffset(minCount);
+
+        //7.返回个前端
+        return Result.ok(scoreResult);
     }
 
 

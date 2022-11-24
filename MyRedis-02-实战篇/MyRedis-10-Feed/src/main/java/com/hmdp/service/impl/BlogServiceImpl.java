@@ -228,7 +228,6 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     }
 
 
-
     //为博客 并设置用户信息
     private void queryUserBlog(Blog blog) {
         Long userId = blog.getUserId();

@@ -10,7 +10,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>com.hmdp</groupId>
+    <groupId>com.ganga</groupId>
     <artifactId>MyRedis-03-CacheUtils</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 

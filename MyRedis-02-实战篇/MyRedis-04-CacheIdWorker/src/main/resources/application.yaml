@@ -2,7 +2,7 @@ server:
   port: 8081
 spring:
   application:
-    name: hmdp
+    name: ganga
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
     url: jdbc:mysql://ayaka520:3306/myredis?useSSL=false&serverTimezone=UTC
@@ -22,7 +22,7 @@ spring:
         max-wait: 10ms
 
 mybatis-plus:
-  type-aliases-package: com.hmdp.entity # 别名扫描包
+  type-aliases-package: com.ganga.entity # 别名扫描包
 logging:
   level:
-    com.hmdp: debug
+    com.ganga: debug

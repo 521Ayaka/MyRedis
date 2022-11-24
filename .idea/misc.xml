@@ -19,6 +19,9 @@
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-05-SeckillVouchers/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-06-DistributedLock/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-07-MessageQueue/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-08-Blog/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-09-Follow/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-10-Feed/pom.xml" />
       </list>
     </option>
   </component>

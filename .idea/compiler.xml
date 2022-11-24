@@ -7,8 +7,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="MyRedis-10-Feed" />
         <module name="MyRedis-05-SeckillVouchers" />
+        <module name="MyRedis-09-Follow" />
         <module name="MyRedis-06-DistributedLock" />
+        <module name="MyRedis-08-Blog" />
         <module name="MyRedis-02-SpringDataRedis" />
         <module name="MyRedis-04-CacheIdWorker" />
         <module name="MyRedis-01-Jedis" />
@@ -35,6 +38,10 @@
       <module name="MyRedis-05-SeckillVouchers" target="1.8" />
       <module name="MyRedis-06-DistributedLock" target="1.8" />
       <module name="MyRedis-07-MessageQueue" target="1.8" />
+      <module name="MyRedis-07-MessageQueue (1)" target="1.8" />
+      <module name="MyRedis-08-Blog" target="1.8" />
+      <module name="MyRedis-09-Follow" target="1.8" />
+      <module name="MyRedis-10-Feed" target="1.8" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
@@ -49,6 +56,10 @@
       <module name="MyRedis-05-SeckillVouchers" options="-parameters" />
       <module name="MyRedis-06-DistributedLock" options="-parameters" />
       <module name="MyRedis-07-MessageQueue" options="-parameters" />
+      <module name="MyRedis-07-MessageQueue (1)" options="-parameters" />
+      <module name="MyRedis-08-Blog" options="-parameters" />
+      <module name="MyRedis-09-Follow" options="-parameters" />
+      <module name="MyRedis-10-Feed" options="-parameters" />
       <module name="hm-dianping" options="-parameters" />
       <module name="hm-dianping (1)" options="-parameters" />
       <module name="hm-dianping-cache" options="-parameters" />

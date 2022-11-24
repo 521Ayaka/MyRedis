@@ -4,11 +4,11 @@
     <file url="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-01-Jedis/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-01-基础篇/MyRedis-02-Redis的Java客户端/MyRedis-02-SpringDataRedis/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实/MyRedis-01-Object/hm-dianping-redis/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实/MyRedis-01-Object/hm-dianping-redis/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实/MyRedis-01-Object/hm-dianping/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Cache/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Cache/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping-redis/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping-redis/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-01-Object/hm-dianping/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-CacheSolve/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-02-CacheSolve/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-03-CacheUtils/src/main/java" charset="UTF-8" />
@@ -21,5 +21,11 @@
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-06-DistributedLock/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-07-MessageQueue/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-07-MessageQueue/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-08-Blog/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-08-Blog/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-09-Follow/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-09-Follow/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-10-Feed/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-10-Feed/src/main/resources" charset="UTF-8" />
   </component>
 </project>

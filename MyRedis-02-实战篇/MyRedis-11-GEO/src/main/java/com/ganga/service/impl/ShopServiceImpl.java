@@ -146,7 +146,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         return Result.ok(shops);
     }
 
-
     public Result queryByIdCacheMutex(Long id) {
 
         //1. 获取商品id的key

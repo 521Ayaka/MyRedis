@@ -23,6 +23,11 @@
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-09-Follow/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-10-Feed/pom.xml" />
         <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-11-GEO/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-12-SignBitMap/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-13-HypreLogLog/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-02-实战篇/MyRedis-13-HyperLogLog/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-03-高级篇/MyRedis-01-集群哨兵分片/redis-demo/pom.xml" />
+        <option value="$PROJECT_DIR$/MyRedis-03-高级篇/MyRedis-02-多级缓存/item-service/pom.xml" />
       </list>
     </option>
   </component>

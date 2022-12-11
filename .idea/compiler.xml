@@ -9,10 +9,14 @@
         <outputRelativeToContentRoot value="true" />
         <module name="MyRedis-05-SeckillVouchers" />
         <module name="MyRedis-09-Follow" />
+        <module name="MyRedis-12-SignBitMap" />
+        <module name="item-service" />
         <module name="MyRedis-11-GEO" />
+        <module name="redis-demo" />
         <module name="MyRedis-01-Cache" />
         <module name="MyRedis-07-MessageQueue" />
         <module name="MyRedis-10-Feed" />
+        <module name="MyRedis-13-HyperLogLog" />
         <module name="MyRedis-06-DistributedLock" />
         <module name="MyRedis-08-Blog" />
         <module name="MyRedis-02-SpringDataRedis" />
@@ -29,6 +33,7 @@
       <module name="hm-dianping-cache-solve" target="1.8" />
       <module name="hm-dianping-cache-util" target="1.8" />
       <module name="hm-dianping-redis" target="1.8" />
+      <module name="item-service" target="8" />
       <module name="MyRedis-01-Cache" target="1.8" />
       <module name="MyRedis-01-Jedis" target="11" />
       <module name="MyRedis-02-CacheSolve" target="1.8" />
@@ -44,6 +49,9 @@
       <module name="MyRedis-09-Follow" target="1.8" />
       <module name="MyRedis-10-Feed" target="1.8" />
       <module name="MyRedis-11-GEO" target="1.8" />
+      <module name="MyRedis-12-SignBitMap" target="1.8" />
+      <module name="MyRedis-13-HyperLogLog" target="11" />
+      <module name="redis-demo" target="1.8" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
@@ -63,12 +71,16 @@
       <module name="MyRedis-09-Follow" options="-parameters" />
       <module name="MyRedis-10-Feed" options="-parameters" />
       <module name="MyRedis-11-GEO" options="-parameters" />
+      <module name="MyRedis-12-SignBitMap" options="-parameters" />
+      <module name="MyRedis-13-HyperLogLog" options="-parameters" />
       <module name="hm-dianping" options="-parameters" />
       <module name="hm-dianping (1)" options="-parameters" />
       <module name="hm-dianping-cache" options="-parameters" />
       <module name="hm-dianping-cache-solve" options="-parameters" />
       <module name="hm-dianping-cache-util" options="-parameters" />
       <module name="hm-dianping-redis" options="-parameters" />
+      <module name="item-service" options="-parameters" />
+      <module name="redis-demo" options="-parameters" />
     </option>
   </component>
 </project>

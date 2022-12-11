@@ -1,0 +1,19 @@
+logging:
+  level:
+    io.lettuce.core: debug
+  pattern:
+    dateformat: MM-dd HH:mm:ss:SSS
+server:
+  port: 8080
+spring:
+  redis:
+    password: gangajiang521
+    sentinel:
+      master: mymaster
+      nodes:
+        - Ayaka520:27001
+        - Ayaka520:27002
+        - Ayaka520:27003
+      password: gangajiang521
+  application:
+    name: ganga

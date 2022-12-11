@@ -64,7 +64,6 @@ public class ItemController {
 
     @DeleteMapping("/{id}")
     public void deleteById(@PathVariable("id") Long id) {
-        itemCache.put();
         itemService.update().set("status", 3).eq("id", id).update();
     }
 
